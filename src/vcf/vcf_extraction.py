@@ -7,10 +7,12 @@ import os
 import pickle
 import joblib
 
+dvd_dir = '/Users/seanryan/Documents/School/Graduate/Variant_Classification_Braun/files_from_MORL_argon/DVD/9_1_1/final_output/'
+
 # Open file, this will read in the header
-dvd_file = '/Users/seanryan/Documents/School/Graduate/Variant_Classification_Braun/files_from_MORL_argon/DVD/9_1_1/final_output/DVDv9_e_20220414.arr.posthoc_annotes.vcf'
-dvd_gz = '/Users/seanryan/Documents/School/Graduate/Variant_Classification_Braun/files_from_MORL_argon/DVD/9_1_1/final_output/DVDv9_e_20220414.arr.posthoc_annotes.vcf.gz'
-dvd_bgz = '/Users/seanryan/Documents/School/Graduate/Variant_Classification_Braun/files_from_MORL_argon/DVD/9_1_1/final_output/DVDv9_e_20220414.arr.posthoc_annotes.vcf.bgz'
+dvd_file = os.path.join(dvd_dir, 'DVDv9_e_20220414.arr.posthoc_annotes.vcf')
+dvd_gz = os.path.join(dvd_dir, 'DVDv9_e_20220414.arr.posthoc_annotes.vcf.gz')
+dvd_bgz = os.path.join(dvd_dir, 'DVDv9_e_20220414.arr.posthoc_annotes.vcf.bgz')
 
 rows = []
 dvd_count = 0
