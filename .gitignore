@@ -4,3 +4,4 @@ unzipped
 scratch
 *pyc
 *__pycache__
+*ipynb_checkpoints
