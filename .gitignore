@@ -1,3 +1,6 @@
 .venv*
 unzipped
 .vscode
+scratch
+*pyc
+*__pycache__
