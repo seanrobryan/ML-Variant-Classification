@@ -3,6 +3,18 @@ import gzip
 import re
 
 ##### Functions for working with compressed files #####
+def compress(input_file, output_file):
+    try:
+        with open(input_file, 'rb') as original_file, gzip.open(output_file, 'wb') as compressed_file:
+            compressed_file.writelines(original_file)
+
+        print(f"Compression complete. Compressed content saved to '{output_file}'")
+    except FileNotFoundError:
+        print(f"File '{input_file}' not found.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
 def decompress(input_file, output_file):
     try:
         with gzip.open(input_file, 'rb') as compressed_file, open(output_file, 'wb') as decompressed_file:
