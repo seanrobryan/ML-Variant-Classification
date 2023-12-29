@@ -1,6 +1,7 @@
 import os
 import gzip
 import re
+import tarfile
 
 ##### Functions for working with compressed files #####
 def compress(input_file, output_file):
@@ -30,7 +31,42 @@ def decompress(input_file, output_file):
         print(f"File '{input_file}' not found.")
     except Exception as e:
         print(f"An error occurred: {str(e)}")
+        
+    return output_file
 #######################################################
+
+##### Functions for working with tarballs #####
+def archive_files(input_files, output_archive):
+    try:
+        with tarfile.open(output_archive, 'w') as archive:
+            for file in input_files:
+                archive.add(file)
+        print(f"Archiving complete. Files archived to '{output_archive}'")
+    except FileNotFoundError:
+        print("One or more input files not found.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+
+def extract_tarball(tarball_file, output_directory = 'extracted_files', keep_tar_file = False):
+    file_path, file_name = os.path.dirname(tarball_file), os.path.basename(tarball_file)
+    base_file_name = file_name.split('.')[0]
+    tar_file = os.path.join(file_path, base_file_name + '.tar')
+    archive_file = decompress(tarball_file, tar_file)
+    if not os.path.isdir(output_directory):        
+        os.mkdir(output_directory)
+    try:
+        with tarfile.open(archive_file, 'r') as archive:
+            archive.extractall(output_directory)
+        print(f"Unarchiving complete. Files extracted to '{output_directory}'")
+    except FileNotFoundError:
+        print(f"Archive file '{archive_file}' not found.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        
+    if not keep_tar_file:
+        os.remove(tar_file)
+##############################################
 
 ##### Functions for comparing lists #####
 def intersection(list1, list2, sort=True):
