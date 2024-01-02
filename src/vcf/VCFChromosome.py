@@ -50,5 +50,16 @@ class VCFChromosome:
             record_list.append(record_dict)
         return pd.DataFrame.from_records(record_list)
 
+            
+    def _separate_variant_column(self):
+        self.df['TYPE'] = self.df.TYPE.apply(lambda x:[0].type)
+        self.df['ALT'] = self.df.TYPE.apply(lambda x:[0].value)
+
+        cols = self.df.columns.tolist()
+        new_col_order = cols[0:4] + [cols[-1], 'GENE'] + [c for c in cols[4:-1] if c != 'GENE']
+        self.df = self.df[new_col_order]
+
+
     def update_dataframe(self):
         self.df = self._to_dataframe()
+        self._separate_variant_column()
