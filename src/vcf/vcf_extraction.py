@@ -50,7 +50,7 @@ for chromosome in chroms_names:
             cur_vcf_chromosome.add_records(chromosome_records) # Error occuring here
             cur_vcf_chromosome.update_dataframe()
             
-            fname = os.path.join(chromsome_dir, f"chromosome_{chromosome}_records")
+            fname = os.path.join(chromosome_dir, f"chromosome_{chromosome}_records")
             cur_vcf_chromosome.df.to_csv(fname + '.csv')
             chromosomes.append(cur_vcf_chromosome)
         except Exception as e:
