@@ -52,8 +52,8 @@ class VCFChromosome:
 
             
     def _separate_variant_column(self):
-        self.df['TYPE'] = self.df.TYPE.apply(lambda x:[0].type)
-        self.df['ALT'] = self.df.TYPE.apply(lambda x:[0].value)
+        self.df['TYPE'] = self.df.ALT.apply(lambda x: x[0].type)
+        self.df['ALT'] = self.df.ALT.apply(lambda x: x[0].value)
 
         cols = self.df.columns.tolist()
         new_col_order = cols[0:4] + [cols[-1], 'GENE'] + [c for c in cols[4:-1] if c != 'GENE']
