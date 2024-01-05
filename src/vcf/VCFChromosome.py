@@ -5,6 +5,8 @@ import pandas as pd
 import logging
 import traceback
 
+GENOMIC_REFERENCE = 'GRCh37'
+
 class VCFChromosome:
     def __init__(self, number):
         self.chromosome = number
@@ -63,3 +65,12 @@ class VCFChromosome:
     def update_dataframe(self):
         self.df = self._to_dataframe()
         self._separate_variant_column()
+        self.df[f"Genomic Description ({GENOMIC_REFERENCE})"] = self.df.apply(make_genomic_description_from_row, axis=1)
+
+
+def genomic_description(chrom, pos, ref, alt):
+    return f"{chrom}:{pos}:{ref}>{alt}"
+
+
+def make_genomic_description_from_row(row):
+    return genomic_description(row['CHROM'], row['POS'], row['REF'], row['ALT'])
