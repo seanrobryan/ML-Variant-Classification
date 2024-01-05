@@ -35,7 +35,7 @@ if not os.path.isdir(chromosome_dir):
 
 reader = vcfpy.Reader.from_path(dvd_gz, tabix_path=dvd_gz_index)
 chroms_names = ['MT', 'X'] + [str(x) for x in range(1,23)]
-chromosomes = []
+chromosomes = {}
 problematic_records = []
 for chromosome in chroms_names:
     # if chromosome not in ['10']: continue
@@ -52,57 +52,83 @@ for chromosome in chroms_names:
             
             fname = os.path.join(chromosome_dir, f"chromosome_{chromosome}_records")
             cur_vcf_chromosome.df.to_csv(fname + '.csv')
-            chromosomes.append(cur_vcf_chromosome)
+            chromosomes[chromosome] = cur_vcf_chromosome
         except Exception as e:
             logging.error(traceback.format_exc())
             print(f"\nSkipping chromosome {chromosome}")
 
 
-reader = vcfpy.Reader.from_path(dvd_gz, tabix_path=dvd_gz_index)
+from importlib import reload
+reload(utils)
+compressed_dir = 'split_vcf_chromosomes_csvs_compressed'
+if not os.path.isdir(compressed_dir):
+    os.mkdir(compressed_dir)
 
-mt_records = reader.fetch('MT')
-# mt_records = [r for r in mt_records]
-mt_chromosome = VCFChromosome('MT')
-mt_chromosome.add_records(mt_records)
-mt_chromosome.update_dataframe()
-mt_df = mt_chromosome.df.copy()
+for chromosome_csv in os.listdir(chromosome_dir):
+    chromosome_csv = os.path.join(chromosome_dir, chromosome_csv)
 
-mt_df['TYPE'] = mt_df.ALT.apply(lambda x: x[0].type)
-mt_df['ALT'] = mt_df.ALT.apply(lambda x: x[0].value)
+    # Archived csv
+    archived_csv = os.path.join(compressed_dir, os.path.splitext(os.path.basename(chromosome_csv))[0] + '.tar')
+    utils.archive_files(chromosome_csv, archived_csv)
 
-cols = mt_df.columns.tolist()
-new_col_order = cols[0:4] + [cols[-1], 'GENE'] + [c for c in cols[4:-1] if c != 'GENE']
-mt_df = mt_df[new_col_order]
-
-domainsToEditWithClass_df = pd.read_csv('inputs/domainsToEditWithClass.csv', index_col=0)
-domainsToEditWithClass_df.head()
-
-merged_csv_wConfidence_df = pd.read_csv('inputs/merged_csv_wConfidence.csv')
-merged_csv_wConfidence_df.head()
-
-merged_csv_wFreeEnergies_df = pd.read_csv('inputs/merged_csv_wFreeEnergies.csv') 
-merged_csv_wFreeEnergies_df.head()
-
-reader.INFO
+    # Compress archive
+    compressed_archive = archived_csv + '.gz'
+    utils.compress(archived_csv, compressed_archive)
+    
+    os.remove(chromosome_csv)
+    os.remove(archived_csv)
 
 
+os.removedirs(chromosome_dir)
 
-# df = pd.read_csv('zips/merged_DDGData.csv', low_memory=False)
+for c in chroms_names:
+    utils.extract_tarball(os.path.join(compressed_dir, f"chromosome_{c}_records.tar.gz"))
 
-# 'modified_merged_DDGData.csv'
+old_index_col = 'Genomic Description GRCh37'
+new_index_col = 'Genomic Description (GRCh37)'
 
-pd.read_csv('unzipped/merged_DDGData.csv')
-pd.read_csv('unzipped/featureMappedCsvs/merged_DDGData.csv')
+# Removing the applied filter line from all the gene files
+feature_mapped_csv_dir = os.path.join('unzipped', 'featureMappedCsvs')
+csvs = [os.path.join(feature_mapped_csv_dir, c) for c in os.listdir(feature_mapped_csv_dir)]
+for csv in csvs:
+    with open(csv, 'r') as file:
+        lines = file.readlines()
+        if lines[0].startswith('{'):
+            lines = lines[1:]
+    with open(csv, 'w') as file:
+        file.writelines(lines)
+        
+dfs = []
+for csv in csvs:
+    dfs.append(pd.read_csv(csv))
 
-ddg_data_correction_pattern = r'\{[^}]*\}(?:,)?'
-import re
 
-with open('unzipped/featureMappedCsvs/merged_DDGData.csv', 'r') as ddg_file:
-    with open('corrected_merged_DDGData.csv', 'w') as corrected_file:
-        for line in ddg_file.readlines():
-            loc = re.search(line, ddg_data_correction_pattern)
-            if loc is not None:
-                new_line = line[:loc.start()] + line[loc.end():]
-            else:
-                new_line = line
-            corrected_file.write(new_line+'\n')
+def split_genomic_description(genomic_description):
+    chromosome, position, change = genomic_description.split(':')
+    ref, alt = change.split('>')
+    return chromosome, ref, alt, position
+
+index_cols = ['CHROM', 'REF', 'ALT', 'POS']
+for df in dfs:
+    df[index_cols] = pd.DataFrame(df.loc[:, new_index_col].apply(split_genomic_description).tolist(), index=df.index)
+
+ddg_df = pd.concat(dfs)
+ddg_df.set_index(new_index_col, inplace=True)
+ddg_merged_file = 'merged_feature_mapped_ddg_values.csv'
+ddg_df.to_csv(ddg_merged_file)
+
+chromosome_ddg_dir = 'chromosomes_w_ddg'
+os.mkdir(chromosome_ddg_dir)
+
+merged_dfs = {}
+for chrom in chroms_names:
+    try:
+        cur_chrom_df = pd.read_csv(f"extracted_files/split_vcf_chromosomes_csvs/chromosome_{chrom}_records.csv", index_col=0)
+        cur_chrom_df.rename(columns={old_index_col: new_index_col}, inplace=True)
+
+        ddg_df = pd.read_csv(ddg_merged_file, index_col=0)
+        merged_dfs[chrom] = cur_chrom_df.merge(ddg_df, left_index=True, right_index=True, how='left')
+
+        merged_dfs[chrom].to_csv(f"chromosomes_w_ddg/chromosome_{chrom}_w_ddg.csv")
+    except Exception as e:
+        print(e)

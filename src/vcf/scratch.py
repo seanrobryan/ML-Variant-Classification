@@ -267,3 +267,53 @@ print("SNP Count:", dvd_count - non_snv_count)
 
 # with open(os.path.join(os.getcwd(), 'extracted_rows.pickle'), 'rb') as f:
 #     picked_rows = pickle.load(f)
+
+
+reader = vcfpy.Reader.from_path(dvd_gz, tabix_path=dvd_gz_index)
+
+mt_records = reader.fetch('MT')
+# mt_records = [r for r in mt_records]
+mt_chromosome = VCFChromosome('MT')
+mt_chromosome.add_records(mt_records)
+mt_chromosome.update_dataframe()
+mt_df = mt_chromosome.df.copy()
+
+mt_df['TYPE'] = mt_df.ALT.apply(lambda x: x[0].type)
+mt_df['ALT'] = mt_df.ALT.apply(lambda x: x[0].value)
+
+cols = mt_df.columns.tolist()
+new_col_order = cols[0:4] + [cols[-1], 'GENE'] + [c for c in cols[4:-1] if c != 'GENE']
+mt_df = mt_df[new_col_order]
+
+domainsToEditWithClass_df = pd.read_csv('inputs/domainsToEditWithClass.csv', index_col=0)
+domainsToEditWithClass_df.head()
+
+merged_csv_wConfidence_df = pd.read_csv('inputs/merged_csv_wConfidence.csv')
+merged_csv_wConfidence_df.head()
+
+merged_csv_wFreeEnergies_df = pd.read_csv('inputs/merged_csv_wFreeEnergies.csv') 
+merged_csv_wFreeEnergies_df.head()
+
+reader.INFO
+
+
+
+# df = pd.read_csv('zips/merged_DDGData.csv', low_memory=False)
+
+# 'modified_merged_DDGData.csv'
+
+pd.read_csv('unzipped/merged_DDGData.csv')
+pd.read_csv('unzipped/featureMappedCsvs/merged_DDGData.csv')
+
+ddg_data_correction_pattern = r'\{[^}]*\}(?:,)?'
+import re
+
+with open('unzipped/featureMappedCsvs/merged_DDGData.csv', 'r') as ddg_file:
+    with open('corrected_merged_DDGData.csv', 'w') as corrected_file:
+        for line in ddg_file.readlines():
+            loc = re.search(line, ddg_data_correction_pattern)
+            if loc is not None:
+                new_line = line[:loc.start()] + line[loc.end():]
+            else:
+                new_line = line
+            corrected_file.write(new_line+'\n')
