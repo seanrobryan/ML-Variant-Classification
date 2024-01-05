@@ -39,8 +39,11 @@ def decompress(input_file, output_file):
 def archive_files(input_files, output_archive):
     try:
         with tarfile.open(output_archive, 'w') as archive:
-            for file in input_files:
-                archive.add(file)
+            if isinstance(input_files, str):
+                archive.add(input_files)
+            else:
+                for file in input_files:
+                    archive.add(file)
         print(f"Archiving complete. Files archived to '{output_archive}'")
     except FileNotFoundError:
         print("One or more input files not found.")
