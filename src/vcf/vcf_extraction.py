@@ -121,14 +121,15 @@ chromosome_ddg_dir = 'chromosomes_w_ddg'
 os.mkdir(chromosome_ddg_dir)
 
 merged_dfs = {}
+ddg_df = pd.read_csv(ddg_merged_file, index_col=0)
 for chrom in chroms_names:
     try:
         cur_chrom_df = pd.read_csv(f"extracted_files/split_vcf_chromosomes_csvs/chromosome_{chrom}_records.csv", index_col=0)
         cur_chrom_df.rename(columns={old_index_col: new_index_col}, inplace=True)
-
-        ddg_df = pd.read_csv(ddg_merged_file, index_col=0)
-        merged_dfs[chrom] = cur_chrom_df.merge(ddg_df, left_index=True, right_index=True, how='left')
+        cur_chrom_df.set_index(new_index_col, inplace=True)
+        merged_dfs[chrom] = cur_chrom_df.merge(ddg_df, left_index=True, right_index=True, how='inner')
 
         merged_dfs[chrom].to_csv(f"chromosomes_w_ddg/chromosome_{chrom}_w_ddg.csv")
     except Exception as e:
         print(e)
+
