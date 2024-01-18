@@ -57,8 +57,6 @@ for chromosome in chroms_names:
             logging.error(traceback.format_exc())
             print(f"\nSkipping chromosome {chromosome}")
 
-
-from importlib import reload
 reload(utils)
 compressed_dir = 'split_vcf_chromosomes_csvs_compressed'
 if not os.path.isdir(compressed_dir):
@@ -118,7 +116,12 @@ ddg_merged_file = 'merged_feature_mapped_ddg_values.csv'
 ddg_df.to_csv(ddg_merged_file)
 
 chromosome_ddg_dir = 'chromosomes_w_ddg'
-os.mkdir(chromosome_ddg_dir)
+if not os.path.isdir(chromosome_ddg_dir):
+    os.makedirs(chromosome_ddg_dir)
+
+compressed_chrom_w_ddg_dir = 'compressed_chromosome_w_ddg/'
+if not os.path.isdir(compressed_chrom_w_ddg_dir):
+    os.makedirs(compressed_chrom_w_ddg_dir)
 
 merged_dfs = {}
 ddg_df = pd.read_csv(ddg_merged_file, index_col=0)
@@ -128,8 +131,22 @@ for chrom in chroms_names:
         cur_chrom_df.rename(columns={old_index_col: new_index_col}, inplace=True)
         cur_chrom_df.set_index(new_index_col, inplace=True)
         merged_dfs[chrom] = cur_chrom_df.merge(ddg_df, left_index=True, right_index=True, how='inner')
+    
+        chrom_w_ddg_file = os.path.join(chromosome_ddg_dir, f"chromosome_{chrom}_w_ddg.csv")
+        merged_dfs[chrom].to_csv(chrom_w_ddg_file)
+        
+        # Archived csv
+        archived_csv = os.path.join(compressed_chrom_w_ddg_dir, os.path.splitext(os.path.basename(chrom_w_ddg_file))[0] + '.tar')
+        utils.archive_files(chrom_w_ddg_file, archived_csv)
 
-        merged_dfs[chrom].to_csv(f"chromosomes_w_ddg/chromosome_{chrom}_w_ddg.csv")
+        # Compress archive
+        compressed_archive = archived_csv + '.gz'
+        utils.compress(archived_csv, compressed_archive)
+
+        os.remove(chrom_w_ddg_file)
+        os.remove(archived_csv)
+
     except Exception as e:
         print(e)
 
+os.removedirs(chromosome_ddg_dir)
