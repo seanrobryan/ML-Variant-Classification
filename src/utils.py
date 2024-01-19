@@ -51,17 +51,16 @@ def archive_files(input_files, output_archive):
         print(f"An error occurred: {str(e)}")
 
 
-def extract_tarball(tarball_file, output_directory = 'extracted_files', keep_tar_file = False):
+def extract_tarball(tarball_file, keep_tar_file = False):
     file_path, file_name = os.path.dirname(tarball_file), os.path.basename(tarball_file)
     base_file_name = file_name.split('.')[0]
     tar_file = os.path.join(file_path, base_file_name + '.tar')
     archive_file = decompress(tarball_file, tar_file)
-    if not os.path.isdir(output_directory):        
-        os.mkdir(output_directory)
     try:
         with tarfile.open(archive_file, 'r') as archive:
-            archive.extractall(output_directory)
-        print(f"Unarchiving complete. Files extracted to '{output_directory}'")
+            # archive.extractall(output_directory)
+            archive.extractall()
+        print("Unarchiving complete")
     except FileNotFoundError:
         print(f"Archive file '{archive_file}' not found.")
     except Exception as e:
@@ -69,6 +68,38 @@ def extract_tarball(tarball_file, output_directory = 'extracted_files', keep_tar
         
     if not keep_tar_file:
         os.remove(tar_file)
+        print(f"Removed archive file {tar_file}")
+
+def compress_directory_contents_to_tarballs(directory, decompress_to, remove_dir = True):
+    # Check if directory containing tarballs exists
+    print(os.path.isdir(directory))
+    if not os.path.isdir(directory):
+        raise OSError(f"Directory {directory} not found.")
+    # Check if output directory exists and whether it was empty prior to tarball extraction
+    if not os.path.isdir(decompress_to):
+        os.makedirs(decompress_to)
+    else:
+        warnings.warn(f"Output directory {decompress_to} already exists.")
+        if len(os.listdir(decompress_to)) != 0:
+            dir_contents = '\n'.join(os.listdir(decompress_dir_contents))
+            warnings.warn(f"Output directory {decompress_to} was not empty. Pre-existing files are {dir_contents}")
+    
+    for file in os.listdir(directory):
+        file = os.path.join(directory, file)
+
+        # Archive file
+        archived_file = os.path.join(decompress_to, os.path.splitext(os.path.basename(file))[0] + '.tar')
+        archive_files(file, archived_file)
+
+        # Compress archive
+        compressed_archive = archived_file + '.gz'
+        compress(archived_file, compressed_archive)
+
+        os.remove(file)
+        os.remove(archived_file)
+
+    if remove_dir:
+        os.removedirs(directory)
 ##############################################
 
 ##### Functions for comparing lists #####
