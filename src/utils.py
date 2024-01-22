@@ -2,6 +2,7 @@ import os
 import gzip
 import re
 import tarfile
+import urllib.parse
 
 ##### Functions for working with compressed files #####
 def compress(input_file, output_file):
@@ -233,4 +234,8 @@ def validate_py_file(file):
         raise ValueError(f"{file} is not a python file. Aborting search...")
 ############################################################################
 
-
+##### Function parsing files ####
+def safe_decode(value):
+    if isinstance(value, str):
+        return urllib.parse.unquote(value)
+    return value
