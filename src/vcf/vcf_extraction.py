@@ -34,7 +34,7 @@ active_dir = os.path.join(active_dir, 'delete_later')
 dvd_gz = os.path.join(active_dir, 'DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz')
 dvd_gz_index = os.path.join(active_dir, 'DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz.tbi')
 
-def separate_chromsomes_from_dvd_vcf(dvd_gz, dvd_gz_index, chromosome_dir='split_vcf_chromosomes_csvs'):
+def separate_chromosomes_from_dvd_vcf(dvd_gz, dvd_gz_index, chromosome_dir='split_vcf_chromosomes_csvs'):
     if not os.path.isdir(chromosome_dir):
         os.makedirs(chromosome_dir)
     
@@ -90,25 +90,23 @@ separate_chromsomes_from_dvd_vcf(dvd_gz, dvd_gz_index, 'split_vcf_chromosomes_cs
 #             logging.error(traceback.format_exc())
 #             print(f"\nSkipping chromosome {chromosome}")
 
-compressed_dir = 'split_vcf_chromosomes_csvs_compressed'
 
-utils.compress_directory_contents_to_tarballs(directory='split_vcf_chromosomes_csvs', decompress_to='split_vcf_chromosomes_csvs_compressed1', remove_dir=True)
 
 for c in chroms_names:
     utils.extract_tarball(os.path.join(compressed_dir, f"chromosome_{c}_records.tar.gz"))
 
-# Removing the applied filter line from all the gene files
-feature_mapped_csv_dir = os.path.join('unzipped', 'featureMappedCsvs')
-csvs = [os.path.join(feature_mapped_csv_dir, c) for c in os.listdir(feature_mapped_csv_dir)]
-dfs = []
-for csv in csvs:
-    with open(csv, 'r') as file:
-        lines = file.readlines()
-        if lines[0].startswith('{'):
-            lines = lines[1:]
-    with open(csv, 'w') as file:
-        file.writelines(lines)
-    dfs.append(pd.read_csv(csv))
+# # Removing the applied filter line from all the gene files
+# feature_mapped_csv_dir = os.path.join('unzipped', 'featureMappedCsvs')
+# csvs = [os.path.join(feature_mapped_csv_dir, c) for c in os.listdir(feature_mapped_csv_dir)]
+# dfs = []
+# for csv in csvs:
+#     with open(csv, 'r') as file:
+#         lines = file.readlines()
+#         if lines[0].startswith('{'):
+#             lines = lines[1:]
+#     with open(csv, 'w') as file:
+#         file.writelines(lines)
+#     dfs.append(pd.read_csv(csv))
         
 # dfs = []
 # for csv in csvs:
@@ -130,11 +128,11 @@ def add_genomic_description_cols(df, set_as_index = True):
 # for df in dfs:
 #     df[index_cols] = pd.DataFrame(df.loc[:, new_index_col].apply(split_genomic_description).tolist(), index=df.index)
     
-ddg_df = add_genomic_description_cols(pd.concat(dfs), set_as_index=True)
-# ddg_df.set_index(new_index_col, inplace=True)
-ddg_merged_file = 'merged_feature_mapped_ddg_values.csv'
-ddg_df.to_csv(ddg_merged_file)
-
+# ddg_df = add_genomic_description_cols(pd.concat(dfs), set_as_index=True)
+# # ddg_df.set_index(new_index_col, inplace=True)
+# ddg_merged_file = 'merged_feature_mapped_ddg_values.csv'
+# ddg_df.to_csv(ddg_merged_file)
+ 
 # compressed_chrom_w_ddg_dir = 'compressed_chromosome_w_ddg/'
 # if not os.path.isdir(compressed_chrom_w_ddgo_dir):
 #     os.makedirs(compressed_chrom_w_ddg_dir)
@@ -177,3 +175,39 @@ merge_ddg_dvd_dfs(ddg_file_name=ddg_merged_file, chromosome_dir='split_vcf_chrom
 os.removedirs(chromosome_ddg_dir)
 
 compress_directory_contents_to_tarballs(directory='chromosomes_w_ddg', decompress_to='compressed_chromosome_w_ddg', remove_dir=True)
+
+if __name__ == '__main__':
+    args = sys.argv
+    dvd_vcf_gzipped = args[1] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz
+    dvd_vcf_index_gzipped = args[2] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz.tbi
+    feature_mapped_csv_dir = args[3] # /unzipped/featureMappedCsvs/
+    ddg_merged_file = args[4] # merged_feature_mapped_ddg_values.csv
+
+    vcf_chromosome_dir = 'split_vcf_chromosomes_csvs'
+    compressed_vcf_chromosome_dir = vcf_chromosome_dir + '_compressed'
+
+    # Extract contents of DVD .vcf and create separate 
+    separate_chromosomes_from_dvd_vcf(dvd_vcf_gzipped, dvd_vcf_index_gzipped, vcf_chromosome_dir)
+
+    # Compress individual chromosome csvs to tarballs
+    utils.compress_directory_contents_to_tarballs(directory=vcf_chromosome_dir, decompress_to=compressed_vcf_chromosome_dir, remove_dir=True)
+
+    # Decompressed files were previously remove, re-extract the tarballs here
+    for c in chroms_names:
+        utils.extract_tarball(os.path.join(compressed_vcf_chromosome_dir, f"chromosome_{c}_records.tar.gz"))
+
+    # Removing the applied filter line from all the gene files
+    csvs = [os.path.join(feature_mapped_csv_dir, c) for c in os.listdir(feature_mapped_csv_dir)]
+    dfs = []
+    for csv in csvs:
+        with open(csv, 'r') as file:
+            lines = file.readlines()
+            if lines[0].startswith('{'):
+                lines = lines[1:]
+        with open(csv, 'w') as file:
+            file.writelines(lines)
+        dfs.append(pd.read_csv(csv))
+            
+    ddg_df = add_genomic_description_cols(pd.concat(dfs), set_as_index=True)
+    # ddg_df.set_index(new_index_col, inplace=True)
+    ddg_df.to_csv(ddg_merged_file)
