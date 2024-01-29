@@ -1,0 +1,7 @@
+.venv*
+unzipped
+.vscode
+scratch
+*pyc
+*__pycache__
+*ipynb_checkpoints
