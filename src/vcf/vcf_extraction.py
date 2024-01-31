@@ -46,7 +46,8 @@ def split_genomic_description(genomic_description):
 def add_genomic_description_cols(df, set_as_index = True):
     index_cols = ['CHROM', 'REF', 'ALT', 'POS']
     df[index_cols] = pd.DataFrame(df.loc[:, GENOMIC_DESCRIPTION_COL].apply(split_genomic_description).tolist())
-    df.set_index(GENOMIC_DESCRIPTION_COL, inplace=True)
+    if set_as_index:
+        df.set_index(GENOMIC_DESCRIPTION_COL, inplace=True)
     return df
 
 def merge_ddg_dvd_dfs(ddg_file_name, chromosome_dir, save_files_to_dir):
