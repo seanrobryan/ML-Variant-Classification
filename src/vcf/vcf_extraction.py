@@ -170,18 +170,22 @@ def merge_ddg_dvd_dfs(ddg_file_name, chromosome_dir, save_files_to_dir):
         except Exception as e:
             print(e)
 
+ddg_merged_file = "merged_feature_mapped_ddg_values.csv"
+chromosome_ddg_dir = 'chromosomes_w_ddg'
 merge_ddg_dvd_dfs(ddg_file_name=ddg_merged_file, chromosome_dir='split_vcf_chromosomes_csvs', save_files_to_dir='chromosomes_w_ddg')
-
+utils.compress_directory_contents_to_tarballs(directory='chromosomes_w_ddg', decompress_to='compressed_chromosome_w_ddg', remove_dir=True)
 os.removedirs(chromosome_ddg_dir)
 
-compress_directory_contents_to_tarballs(directory='chromosomes_w_ddg', decompress_to='compressed_chromosome_w_ddg', remove_dir=True)
 
-if __name__ == '__main__':
-    args = sys.argv
-    dvd_vcf_gzipped = args[1] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz
-    dvd_vcf_index_gzipped = args[2] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz.tbi
-    feature_mapped_csv_dir = args[3] # /unzipped/featureMappedCsvs/
-    ddg_merged_file = args[4] # merged_feature_mapped_ddg_values.csv
+def main(args):
+    # dvd_vcf_gzipped = args[1] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz
+    # dvd_vcf_index_gzipped = args[2] # /home/srryn/hpchome/DVD/versions/9_1_1/final_outputs/delete_later/DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz.tbi
+    # feature_mapped_csv_dir = args[3] # /unzipped/featureMappedCsvs/
+    # ddg_merged_file = args[4] # merged_feature_mapped_ddg_values.csv
+    dvd_vcf_gzipped = "DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz"
+    dvd_vcf_index_gzipped = "DVDv9_e_20220414.arr.posthoc_annotes_gunzip_ascii_bgzip.gz.tbi"
+    feature_mapped_csv_dir = "featureMappedCsvs"
+    ddg_merged_file = "merged_feature_mapped_ddg_values.csv"
 
     vcf_chromosome_dir = 'split_vcf_chromosomes_csvs'
     compressed_vcf_chromosome_dir = vcf_chromosome_dir + '_compressed'
@@ -211,3 +215,10 @@ if __name__ == '__main__':
     ddg_df = add_genomic_description_cols(pd.concat(dfs), set_as_index=True)
     # ddg_df.set_index(new_index_col, inplace=True)
     ddg_df.to_csv(ddg_merged_file)
+    
+    # Merge DDG values with DVD .vcf files
+    merge_ddg_dvd_dfs(ddg_file_name=ddg_merged_file, chromosome_dir=vcf_chromosome_dir, save_files_to_dir='chromosomes_w_ddg')
+    utils.compress_directory_contents_to_tarballs(directory='chromosomes_w_ddg', decompress_to='compressed_chromosome_w_ddg', remove_dir=True)
+
+if __name__ == '__main__':
+    main(sys.argv)
