@@ -86,20 +86,12 @@ def main(args):
     for c in chroms_names:
         utils.extract_tarball(os.path.join(compressed_vcf_chromosome_dir, f"chromosome_{c}_records.tar.gz"))
 
-    # Removing the applied filter line from all the gene files
+    # Gather the ddg data files
     csvs = [os.path.join(feature_mapped_csv_dir, c) for c in os.listdir(feature_mapped_csv_dir)]
-    dfs = []
-    for csv in csvs:
-        with open(csv, 'r') as file:
-            lines = file.readlines()
-            if lines[0].startswith('{'):
-                lines = lines[1:]
-        with open(csv, 'w') as file:
-            file.writelines(lines)
-        dfs.append(pd.read_csv(csv))
-            
+    dfs = [pd.read_csv(csv) for csv in csvs]
+    
+    # Merge the ddg dataframes and add the genomic description
     ddg_df = add_genomic_description_cols(pd.concat(dfs), set_as_index=True)
-    # ddg_df.set_index(new_index_col, inplace=True)
     ddg_df.to_csv(ddg_merged_file)
     
     # Merge DDG values with DVD .vcf files
