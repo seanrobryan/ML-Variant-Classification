@@ -1,3 +1,33 @@
-# MORL-DVD-SVM
-Start with the VCF_Extractor.py, it's an absolute mess but that's where a lot of pre-processing occurred.
-Then, in the jupyter notebook, that's where I built the SVM, generated figures, and got accuracy metrics. (Again, still quite the mess).
+# ML Variant Classification (in hearing loss)
+
+# Installation
+
+# Environment Configuration
+## Python Environment
+### Create Environment
+Requirements: python3.11
+`python -m venv .venv`
+### Activate Environment
+#### MacOS/Linux
+`source .venv/bin/activate`
+#### Windows
+##### Command Window (cmd.exe)
+`.venv\Scripts\activate.bat` 
+##### Powershell
+`.venv\Scripts\Activate.ps1`
+### Install Modules
+`pip install -r requirements.txt`
+
+# Data Acquisition
+## Deafness Variation Database (DVD) variation caller format (vcf) file
+TODO: Reference to publicly available DVD file
+TODO: Special note for those at MORL with access to the non-public data
+
+- DVD VCF tarball (.gz.tar)
+- DVD VCF Index (.gz.tar.tbi)
+
+## Protein Free-Folding Energy and Surface Area
+TODO: Reference to Tollefson et. al. data
+
+### Download and Process 
+`./extract_otoprotein.sh`
